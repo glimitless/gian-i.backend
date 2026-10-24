@@ -10,5 +10,4 @@ const app = express();
 app.use(express.static('assets'));
 app.use('/', authRoutes);
 
-
 export default app;
