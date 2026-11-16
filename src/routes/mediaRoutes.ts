@@ -1,6 +1,5 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { error } from 'node:console';
 import path from 'node:path';
 
 const router = express.Router();
