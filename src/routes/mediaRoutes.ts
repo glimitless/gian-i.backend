@@ -7,7 +7,7 @@ const router = express.Router();
 const ALLOWED_ORIGINS = [
   'https://gian-i.media'
 ]
-const ASSETS_DIR = path.resolve(import.meta.dirname, '../src/assets')
+const ASSETS_DIR = path.resolve(import.meta.dirname, '../../src/assets')
 const MEDIA_FOLDERS = {
   images: 'image',
   videos: 'video',
