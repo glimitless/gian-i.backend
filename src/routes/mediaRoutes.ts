@@ -3,10 +3,15 @@ import type { Request, Response, NextFunction } from 'express';
 import path from 'node:path';
 
 const router = express.Router();
+const forbidden = () => Object.assign(new Error('Forbidden'), { status: 403 });
 
-const ALLOWED_ORIGINS = new Set([
-  'https://gian-i.media'
-])
+const ALLOWED_ORIGINS = new Set(
+  (process.env.ALLOWED_ORIGINS ?? 'https://gian-i.media')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => new URL(value).origin)
+)
 const ASSETS_DIR = path.resolve(import.meta.dirname, '../../src/assets')
 const MEDIA_FOLDERS = {
   images: 'image',
@@ -27,13 +32,19 @@ const getRequestOrigin = (req: Request): (string | undefined) => {
     return undefined;
   }
 }
+
+
 const restrictToAllowedOrigins = (req: Request, res: Response, next: NextFunction) => {
   res.vary('Origin');
+  res.vary('Referer');
+  res.vary('Sec-Fetch-Site');
+
   const origin = getRequestOrigin(req);
+  const secFetchSite = req.get('sec-fetch-site');
 
   if(origin) {
     if (!ALLOWED_ORIGINS.has(origin)){
-      next(Object.assign(new Error('Forbidden'), { status: 403 }));
+      next(forbidden());
       return;
     }
     res.set({
@@ -41,10 +52,13 @@ const restrictToAllowedOrigins = (req: Request, res: Response, next: NextFunctio
       'Cross-Origin-Resource-Policy': 'cross-origin'
     })
   }
-
-  const secFetchSite = req.get('sec-fetch-site');
-  if (secFetchSite === 'cross-site') {
-    next(Object.assign(new Error('Forbidden'), { status: 403 }));
+  // No Origin/Referer: only trust the browser's own same-site / direct-navigation signal
+  else if (
+    secFetchSite !== 'same-origin' 
+    && secFetchSite !== 'same-site' 
+    && secFetchSite !== 'none'
+  ) {
+    next(forbidden());
     return;
   }
 
