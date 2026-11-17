@@ -1,6 +1,5 @@
 const MEDIA_FOLDERS: Record<string, string> = {
   images: 'image',
-  videos: 'video',
   pdfs: 'pdf'
 }
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -53,3 +52,12 @@ const errorResponse = (status: (403 | 404 | 405 | 416), headers?: Headers) => {
   return response;
 }
 
+const toBucketFilePath = (pathname: string): (string | null) => {
+    const [, mediaType, ...rest] = pathname.split('/').map(decodeURIComponent);
+    const folder = mediaType ? MEDIA_FOLDERS[mediaType] : undefined;
+
+    if(!folder || rest.length === 0 || rest.some((segment) => segment === '' || segment.startsWith('.'))){
+      return null;
+    }
+    return [folder, ...rest].join('/');
+}

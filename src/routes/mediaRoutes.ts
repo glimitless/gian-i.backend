@@ -33,7 +33,6 @@ const getRequestOrigin = (req: Request): (string | undefined) => {
   }
 }
 
-
 const restrictToAllowedOrigins = (req: Request, res: Response, next: NextFunction) => {
   res.vary('Origin');
   res.vary('Referer');
