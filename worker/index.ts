@@ -128,5 +128,33 @@ export default {
       const filename = key.split('/').pop() ?? DEFAULT_FILENAME;
       headers.set('Content-Disposition', `attachment; filename=${filename}; filename*=UTF-8''${encodeURIComponent(filename)}`)
     }
+
+    // Returns only the file details if request is a HEAD request 
+    if (request.method === 'HEAD') {
+      headers.set('Content-Length', String(object.size))
+      return new Response(null, { headers })
+    }
+
+    // Returns only the file details if browsers cached copy is still current
+    if (!hasBody(object)) {
+      return new Response(null, { status: 304, headers })
+    }
+
+    // Checks if requested byte range for video is valid
+    const rangeHeader = request.headers.get('range');
+    const validRange = (rangeHeader !== null && /^byte=(\d+)-/.test(rangeHeader)) ? rangeHeader : null;
+    if (validRange && rangeStartsPastEnd(validRange, object.size)) {
+      headers.set('Content-Range', `bytes */${object.size}`);
+      return errorResponse(416, headers);
+    }
+
+    // Returns file slice of video
+    if (validRange && object.range) {
+      headers.set('Content-Range', contentRange(object.range, object.size));
+      return new Response(object.body, { status: 206, headers });
+    }
+
+    // Returns media file (img or pdf)
+    return new Response(object.body, { headers });
   }
 } satisfies ExportedHandler<Env>
