@@ -1,0 +1,14 @@
+# Place test file in simulated bucket
+npx wrangler r2 object put gian-i-media/image/axxs-digital/parlour/gc_ad-parlour-thumbnail.webp --file src/assets/image/axxs-digital/parlour/gc_ad-parlour-thumbnail.webp --content-type image/webp --local
+
+# Run simulated worker
+npx wrangler dev
+
+# Worker serves files
+open http://localhost:8787/images/axxs-digital/parlour/gc_ad-parlour-thumbnail.webp in a browser.
+
+# Worker blocks hotlinking from other origins
+curl.exe -i -H "Origin: https://evil.com" http://localhost:8787/images/axxs-digital/parlour/gc_ad-parlour-thumbnail.webp
+
+# Worker serves gian-i.media
+curl.exe -i -H "Origin: https://gian-i.media" http://localhost:8787/images/axxs-digital/parlour/gc_ad-parlour-thumbnail.webp
