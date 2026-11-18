@@ -6,3 +6,6 @@
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# local wrangler/miniflare state files
+/.wrangler
