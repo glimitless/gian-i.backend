@@ -4,7 +4,8 @@ const MEDIA_FOLDERS: Record<string, string> = {
   videos: 'video',
   pdfs: 'pdf'
 }
-const ONE_YEAR = 60 * 60 * 24 * 365;
+const MAX_AGE = 60 * 60 * 24 * 365; // One year
+const DEFAULT_FILENAME = 'download'
 
 const parseAllowedOrigins = (value: string | undefined) => new Set(
   (value ?? 'https://gian-i.media')
@@ -54,7 +55,7 @@ const errorResponse = (status: (403 | 404 | 405 | 416), headers?: Headers) => {
   return response;
 }
 
-const toBucketFilePath = (pathname: string): (string | null) => {
+const toObjectKey = (pathname: string): (string | null) => {
   const [, mediaType, ...rest] = pathname.split('/').map(decodeURIComponent);
   const folder = mediaType ? MEDIA_FOLDERS[mediaType] : undefined;
 
@@ -86,6 +87,46 @@ const hasBody = (object: (R2Object | R2ObjectBody)): object is R2ObjectBody => '
 // Request handler
 export default {
   async fetch(request, env) {
+    // Method read-only check
+    if (request.method !== 'GET' && request.method=='HEAD'){
+      return errorResponse(405, new Headers({ 'Allow': 'GET, HEAD' }));
+    }
 
+    // Origin Check
+    const headers = checkOrigin(request, parseAllowedOrigins(env.ALLOWED_ORIGINS))
+    if (!headers) return errorResponse(403);
+
+    // Convert URL to bucket key
+    const url = new URL(request.url)
+    let key: (string | null);
+    try {
+      key = toObjectKey(url.pathname);
+    } catch {
+      key = null;
+    }
+    if (!key) return errorResponse(404, headers);
+
+    // Fetch either the file, a slice of the file, or a file's details from the Cloudfare R2 Bucket
+    let object: (R2Object | R2ObjectBody | null)
+    try {
+      object = request.method === 'HEAD'
+        ? await env.BUCKET.head(key)
+        : await env.BUCKET.get(key, { range: request.headers, onlyIf: request.headers })
+    } catch {
+      return errorResponse(416, headers);
+    }
+    if (!object) return errorResponse(404, headers);
+    
+    // Add the fetched file's details to the response header
+    object.writeHttpMetadata(headers);
+    headers.set('ETag', object.httpEtag);
+    headers.set('Cache-Control', `public, max-age=${MAX_AGE}`);
+    headers.set('Accept-Ranges', 'bytes');
+
+    // Tells browser to download the response
+    if (url.searchParams.has('download')) {
+      const filename = key.split('/').pop() ?? DEFAULT_FILENAME;
+      headers.set('Content-Disposition', `attachment; filename=${filename}; filename*=UTF-8''${encodeURIComponent(filename)}`)
+    }
   }
 } satisfies ExportedHandler<Env>
