@@ -1,5 +1,6 @@
 const MEDIA_FOLDERS: Record<string, string> = {
   images: 'image',
+  videos: 'video',
   pdfs: 'pdf'
 }
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -60,4 +61,8 @@ const toBucketFilePath = (pathname: string): (string | null) => {
       return null;
     }
     return [folder, ...rest].join('/');
+}
+
+const contentRange = (range: R2Range, size: number) => {
+  
 }
