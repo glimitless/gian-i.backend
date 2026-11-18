@@ -54,15 +54,28 @@ const errorResponse = (status: (403 | 404 | 405 | 416), headers?: Headers) => {
 }
 
 const toBucketFilePath = (pathname: string): (string | null) => {
-    const [, mediaType, ...rest] = pathname.split('/').map(decodeURIComponent);
-    const folder = mediaType ? MEDIA_FOLDERS[mediaType] : undefined;
+  const [, mediaType, ...rest] = pathname.split('/').map(decodeURIComponent);
+  const folder = mediaType ? MEDIA_FOLDERS[mediaType] : undefined;
 
-    if(!folder || rest.length === 0 || rest.some((segment) => segment === '' || segment.startsWith('.'))){
-      return null;
-    }
-    return [folder, ...rest].join('/');
+  if(!folder || rest.length === 0 || rest.some((segment) => segment === '' || segment.startsWith('.'))){
+    return null;
+  }
+  return [folder, ...rest].join('/');
 }
 
 const contentRange = (range: R2Range, size: number) => {
-  
+  // offset is where the slice starts, length is how many bytes to send, and suffix means the last n bytes of a file.
+  const { offset, length, suffix } = range as { offset?: number; length?: number; suffix?: number }
+
+  const start = suffix !== undefined ? Math.max(size - suffix, 0) : (offset ?? 0);
+  const end = (suffix !== undefined || length === undefined) ? size - 1 : start + length - 1;
+
+  return `bytes ${start}-${Math.min(end, size - 1)}/${size}`;
 }
+
+const rangeStartsPastEnd = (rangeHeader: string, size: number) => {
+  const start = /^byte=(\d+)-/.exec(rangeHeader)?.[1];
+  return start !== undefined && Number(start) >= size;
+}
+
+const hasBody = (object: (R2Object | R2ObjectBody)): object is R2ObjectBody => 'body' in object;

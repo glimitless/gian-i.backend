@@ -1,12 +1,12 @@
 # Cloudfare Worker Config. Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
-name = "gian-i-backend"
+name = "gian-i-media"
 main = "worker/index.ts"
 compatibility_date = "2026-11-17"
 
 # Makes the R2 bucket available in the code as env.BUCKET
 [[r2_buckets]]
 binding = "BUCKET"
-bucket_name = "gian-i-backend"
+bucket_name = "gian-i-media"
 
 # Non-secret environment variables
 [vars]
