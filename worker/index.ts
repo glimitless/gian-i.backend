@@ -1,3 +1,4 @@
+// Helper functions
 const MEDIA_FOLDERS: Record<string, string> = {
   images: 'image',
   videos: 'video',
@@ -79,3 +80,12 @@ const rangeStartsPastEnd = (rangeHeader: string, size: number) => {
 }
 
 const hasBody = (object: (R2Object | R2ObjectBody)): object is R2ObjectBody => 'body' in object;
+
+
+
+// Request handler
+export default {
+  async fetch(request, env) {
+
+  }
+} satisfies ExportedHandler<Env>
