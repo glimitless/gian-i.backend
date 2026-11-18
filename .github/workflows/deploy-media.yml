@@ -1,0 +1,48 @@
+# Publishes src/assets to GitHub Pages (media.gian-i.media).
+# Keeps the backend's URL paths: /images, /videos, /pdfs.
+name: Deploy media to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/assets/**"
+      - ".github/workflows/deploy-media.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout assets only
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: src/assets
+
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp -r src/assets/image _site/images
+          cp -r src/assets/video _site/videos
+          cp -r src/assets/pdf   _site/pdfs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
