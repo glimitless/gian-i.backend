@@ -34,9 +34,11 @@ jobs:
       - name: Stage site
         run: |
           mkdir -p _site
-          cp -r src/assets/image _site/images
-          cp -r src/assets/video _site/videos
-          cp -r src/assets/pdf   _site/pdfs
+          # Copy each folder only if it exists (e.g. videos were removed from the repo).
+          [ -d src/assets/image ] && cp -r src/assets/image _site/images
+          [ -d src/assets/video ] && cp -r src/assets/video _site/videos
+          [ -d src/assets/pdf ]   && cp -r src/assets/pdf   _site/pdfs
+          true
 
       - uses: actions/configure-pages@v5
 
