@@ -9,3 +9,7 @@
 
 # local wrangler/miniflare state files
 /.wrangler
+
+# claude
+/.claude
+/.playwright-mcp
